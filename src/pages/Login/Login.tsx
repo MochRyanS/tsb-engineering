@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { HardHat, LogIn, KeyRound } from "lucide-react";
+import { HardHat, LogIn, } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { useToast } from "../../components/ui/Toast/Toast";
 import Button from "../../components/ui/Button/Button";
@@ -71,18 +71,6 @@ export default function Login() {
                         </div>
                         <Button type="submit" variant="primary" size="lg" loading={loading} icon={LogIn}>LOGIN</Button>
                     </form>
-
-                    <div className={styles.demo}>
-                        <div className={styles.demoHead}><KeyRound size={13} />AKUN DEMO — KLIK UNTUK MENGISI OTOMATIS</div>
-                        <div className={styles.demoGrid}>
-                            <button type="button" className={styles.demoCard} onClick={() => { setUsername("admin"); setPassword("admin123"); }}>
-                                <strong>Admin</strong><span>admin / admin123</span>
-                            </button>
-                            <button type="button" className={styles.demoCard} onClick={() => { setUsername("technician"); setPassword("tech123"); }}>
-                                <strong>Technician</strong><span>technician / tech123</span>
-                            </button>
-                        </div>
-                    </div>
                 </motion.div>
             </div>
         </div>
