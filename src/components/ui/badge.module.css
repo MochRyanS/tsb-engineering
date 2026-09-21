@@ -1,0 +1,88 @@
+﻿.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+}
+
+.stNew {
+    color: #2E6DA8;
+    background: var(--color-info-soft);
+    border-color: #C6DDF1;
+}
+
+.stVerified {
+    color: #2464AE;
+    background: #E5EEF9;
+    border-color: #C3D6EE;
+}
+
+.stAssigned {
+    color: #56779B;
+    background: #EDF2F8;
+    border-color: #D3DEEA;
+}
+
+.stProgress {
+    color: var(--color-primary-light);
+    background: #DCE9F7;
+    border-color: #B7D2ED;
+}
+
+.stWaiting {
+    color: #9a6a15;
+    background: var(--color-warning-soft);
+    border-color: #efdcae;
+}
+
+.stQC {
+    color: var(--color-text-muted);
+    background: var(--color-surface-alt);
+    border-color: var(--color-border);
+}
+
+.stCompleted {
+    color: var(--color-success);
+    background: var(--color-success-soft);
+    border-color: #cbe5d5;
+}
+
+.stCancelled {
+    color: var(--color-danger);
+    background: var(--color-danger-soft);
+    border-color: #efd2d2;
+}
+
+.prLow {
+    color: var(--color-text-muted);
+    background: var(--color-surface-alt);
+    border-color: var(--color-border);
+}
+
+.prMid {
+    color: #9a6a15;
+    background: var(--color-warning-soft);
+    border-color: #efdcae;
+}
+
+.prHigh {
+    color: var(--color-danger);
+    background: var(--color-danger-soft);
+    border-color: #efd2d2;
+}

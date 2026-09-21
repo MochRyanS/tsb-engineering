@@ -1,0 +1,147 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.chip {
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--color-border-strong);
+    background: #fff;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text-muted);
+    transition: all 0.2s;
+}
+
+.chipOn {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: #fff;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 16px;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 20px;
+}
+
+.cardHead {
+    display: flex;
+    gap: 13px;
+    align-items: center;
+}
+
+.avatar {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: var(--color-accent);
+    font-weight: 800;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.cardHead h3 {
+    font-size: var(--font-size-md);
+}
+
+.role {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+}
+
+.status {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    padding: 4px 9px;
+    border-radius: var(--radius-pill);
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.sAvailable {
+    color: var(--color-success);
+    background: var(--color-success-soft);
+}
+
+.sOnDuty {
+    color: var(--color-info);
+    background: var(--color-info-soft);
+}
+
+.sOffDuty {
+    color: var(--color-text-muted);
+    background: var(--color-surface-alt);
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.6fr;
+    gap: 14px;
+    margin-top: 18px;
+    align-items: center;
+}
+
+.stats strong {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    display: block;
+}
+
+.stats span {
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+
+.perfHead {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.perfHead strong {
+    font-size: 18px;
+}
+
+.bar {
+    display: block;
+    height: 6px;
+    border-radius: 99px;
+    background: var(--color-surface-alt);
+    margin-top: 7px;
+    overflow: hidden;
+}
+
+.bar i {
+    display: block;
+    height: 100%;
+    border-radius: 99px;
+}
+
+.emptyWrap {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}

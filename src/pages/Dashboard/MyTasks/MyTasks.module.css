@@ -1,0 +1,42 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.summary div {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    border-top: 3px solid var(--color-primary);
+}
+
+.summary strong {
+    font-family: var(--font-mono);
+    font-size: 26px;
+    display: block;
+}
+
+.summary span {
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.skeletons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.emptyWrap {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}

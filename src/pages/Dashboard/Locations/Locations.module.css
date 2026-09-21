@@ -1,0 +1,116 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.count {
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.iconChip {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    background: var(--color-primary);
+    color: var(--color-accent);
+    flex-shrink: 0;
+}
+
+.cardBody {
+    min-width: 0;
+    flex: 1;
+}
+
+.cardBody h3 {
+    font-size: var(--font-size-md);
+}
+
+.cat {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+}
+
+.cardSide {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.wo {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-accent-dark);
+    font-weight: 700;
+}
+
+.del {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    border: 1px solid var(--color-border-strong);
+    background: #fff;
+    color: var(--color-text-muted);
+    transition: all 0.15s;
+}
+
+.del:hover {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+    background: var(--color-danger-soft);
+}
+
+.modalForm {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.confirmBody {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}

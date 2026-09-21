@@ -1,0 +1,47 @@
+.wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 640px;
+    margin-bottom: 44px;
+}
+
+.center {
+    margin-inline: auto;
+    text-align: center;
+    align-items: center;
+}
+
+.eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: var(--color-accent-dark);
+    font-weight: 600;
+}
+
+.tick {
+    display: inline-block;
+    width: 26px;
+    height: 2px;
+    background: var(--color-accent);
+}
+
+.dark .eyebrow {
+    color: var(--color-accent);
+}
+
+.desc {
+    color: var(--color-text-muted);
+}
+
+.dark .desc {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.wrap h2 {
+    font-size: var(--font-size-3xl);
+}

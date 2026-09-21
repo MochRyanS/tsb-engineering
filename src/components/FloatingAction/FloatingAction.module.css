@@ -1,0 +1,34 @@
+﻿.fab {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 90;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 15px 22px;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
+    color: var(--color-primary-dark);
+    font-weight: 800;
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.05em;
+    box-shadow: var(--shadow-lg);
+    transition: background 0.2s;
+}
+
+.fab:hover {
+    background: #6BB0F0;
+}
+
+@media (max-width: 640px) {
+    .fab span {
+        display: none;
+    }
+
+    .fab {
+        padding: 16px;
+        right: 18px;
+        bottom: 18px;
+    }
+}

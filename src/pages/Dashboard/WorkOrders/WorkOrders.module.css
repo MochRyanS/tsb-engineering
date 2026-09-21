@@ -1,0 +1,96 @@
+﻿.page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.toolbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.searchWrap {
+    flex: 1;
+    min-width: 220px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1.5px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    padding: 0 12px;
+}
+
+.searchWrap svg {
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+
+.searchWrap input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 10px 0;
+    font-size: var(--font-size-sm);
+    min-width: 0;
+    background: transparent;
+}
+
+.filter {
+    background: #fff;
+    border: 1.5px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+}
+
+.group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.groupHead {
+    display: flex;
+    align-items: center;
+}
+
+.groupTitle {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    color: var(--color-text-muted);
+    font-weight: 600;
+}
+
+.groupTitle svg {
+    color: var(--color-accent-dark);
+}
+
+.countChip {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    background: var(--color-primary);
+    color: #fff;
+    border-radius: var(--radius-pill);
+    padding: 2px 9px;
+    font-weight: 700;
+}
+
+.skeletonList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.emptyWrap {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}

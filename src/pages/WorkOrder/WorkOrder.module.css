@@ -1,0 +1,40 @@
+.pageHead {
+    background: var(--color-primary-dark);
+    padding: 110px 0 90px;
+    position: relative;
+    overflow: hidden;
+}
+
+.pageHead::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 56px 56px;
+    animation: gridDrift 30s linear infinite;
+}
+
+.eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    color: var(--color-accent);
+}
+
+.title {
+    color: #fff;
+    font-size: var(--font-size-3xl);
+    margin-top: 16px;
+}
+
+.lead {
+    color: rgba(255, 255, 255, 0.72);
+    margin-top: 16px;
+    max-width: 540px;
+    position: relative;
+    z-index: 1;
+}
+
+.formSection {
+    padding: 64px 0 96px;
+}
