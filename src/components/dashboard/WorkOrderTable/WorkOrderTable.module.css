@@ -1,4 +1,4 @@
-/* WorkOrderTable.module.css */
+﻿/* WorkOrderTable.module.css */
 
 .wrap {
   background: #fff;
@@ -42,15 +42,41 @@
 }
 
 /* lebar kolom tetap agar tabel AKTIF & RIWAYAT selalu sejajar */
-.table thead th:nth-child(1) { width: 175px; }
-.table thead th:nth-child(2) { width: 112px; }
-.table thead th:nth-child(3) { width: 150px; }
-.table thead th:nth-child(4) { width: 140px; }
-.table thead th:nth-child(5) { width: 190px; }
-.table thead th:nth-child(6) { width: 130px; }
-.table thead th:nth-child(7) { width: 118px; }
-.table thead th:nth-child(8) { width: 104px; }
-.table thead th:nth-child(9) { width: 128px; }
+.table thead th:nth-child(1) {
+  width: 175px;
+}
+
+.table thead th:nth-child(2) {
+  width: 112px;
+}
+
+.table thead th:nth-child(3) {
+  width: 150px;
+}
+
+.table thead th:nth-child(4) {
+  width: 140px;
+}
+
+.table thead th:nth-child(5) {
+  width: 190px;
+}
+
+.table thead th:nth-child(6) {
+  width: 130px;
+}
+
+.table thead th:nth-child(7) {
+  width: 118px;
+}
+
+.table thead th:nth-child(8) {
+  width: 104px;
+}
+
+.table thead th:nth-child(9) {
+  width: 128px;
+}
 
 .thAction {
   width: 56px;
@@ -142,15 +168,59 @@
   white-space: nowrap;
 }
 
-.toneBlue { background: #eaf3fc; color: #1d4a7e; border: 1px solid #c9ddf5; }
-.toneSky { background: #eff8ff; color: #0369a1; border: 1px solid #bae6fd; }
-.toneTeal { background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; }
-.toneAmber { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
-.toneOrange { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
-.toneViolet { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
-.toneGreen { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
-.toneRed { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-.toneGray { background: #f6f8fb; color: #46587a; border: 1px solid #e3e9f2; }
+.toneBlue {
+  background: #eaf3fc;
+  color: #1d4a7e;
+  border: 1px solid #c9ddf5;
+}
+
+.toneSky {
+  background: #eff8ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.toneTeal {
+  background: #f0fdfa;
+  color: #0f766e;
+  border: 1px solid #99f6e4;
+}
+
+.toneAmber {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.toneOrange {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+
+.toneViolet {
+  background: #f5f3ff;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+}
+
+.toneGreen {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.toneRed {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.toneGray {
+  background: #f6f8fb;
+  color: #46587a;
+  border: 1px solid #e3e9f2;
+}
 
 .eyeBtn {
   display: inline-grid;

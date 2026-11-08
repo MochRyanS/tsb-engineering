@@ -211,6 +211,43 @@ function byCreatedDesc(a: Record<string, unknown>, b: Record<string, unknown>): 
   return tb - ta;
 }
 
+/* ---------- Normalisasi dokumen (REVISI 3) ----------
+   Dashboard lama memanggil `createdAt.slice(...)` — menganggapnya STRING.
+   Service baru menyimpan Timestamp Firestore (objek) → TypeError → blank page.
+   Solusi: SEMUA field tanggal dinormalkan menjadi string ISO sebelum keluar
+   dari service, sehingga kompatibel untuk `.slice()`, `new Date()`, dan
+   helper `toDateValue()`/`formatDate()` di file baru. */
+
+const DATE_FIELDS = [
+  'createdAt',
+  'updatedAt',
+  'completedAt',
+  'reportedAt',
+  'reportedDate',
+  'dueDate',
+  'lastLogin',
+];
+
+function toIsoString(v: unknown): unknown {
+  if (v === null || v === undefined) return v;
+  if (typeof v === 'string') return v; // sudah string — biarkan
+  const d = toDateValue(v); // Timestamp / {seconds} / number → Date
+  return d ? d.toISOString() : v;
+}
+
+function normalizeDoc(raw: Record<string, unknown>): TrackedWorkOrder {
+  const out: Record<string, unknown> = { ...raw };
+  for (const f of DATE_FIELDS) {
+    if (out[f] !== undefined && out[f] !== null) out[f] = toIsoString(out[f]);
+  }
+  if (Array.isArray(out.timeline)) {
+    out.timeline = (out.timeline as Record<string, unknown>[]).map((t) =>
+      t && typeof t === 'object' ? { ...t, at: toIsoString((t as Record<string, unknown>).at) } : t
+    );
+  }
+  return out as TrackedWorkOrder;
+}
+
 /* ---------- Penyimpanan mock (localStorage) ---------- */
 
 const LS_KEY = 'tsb_workorders_v1';
@@ -257,15 +294,15 @@ export function subscribeWorkOrders(
       collection(db, WORKORDERS_COLLECTION),
       (snap) => {
         const list = snap.docs
-          .map((d) => ({ id: d.id, ...(d.data() as Record<string, unknown>) }))
+          .map((d) => normalizeDoc({ id: d.id, ...(d.data() as Record<string, unknown>) }))
           .sort(byCreatedDesc);
-        onData(list as TrackedWorkOrder[]);
+        onData(list);
       },
       (err) => onError?.(err)
     );
   }
   const send = () => {
-    onData([...mockRead()].sort(byCreatedDesc) as TrackedWorkOrder[]);
+    onData([...mockRead()].map(normalizeDoc).sort(byCreatedDesc));
   };
   send();
   mockListeners.add(send);
@@ -279,10 +316,10 @@ export async function getWorkOrders(): Promise<TrackedWorkOrder[]> {
   if (isFirebaseMode && db) {
     const snap = await getDocs(collection(db, WORKORDERS_COLLECTION));
     return snap.docs
-      .map((d) => ({ id: d.id, ...(d.data() as Record<string, unknown>) }))
-      .sort(byCreatedDesc) as TrackedWorkOrder[];
+      .map((d) => normalizeDoc({ id: d.id, ...(d.data() as Record<string, unknown>) }))
+      .sort(byCreatedDesc);
   }
-  return [...mockRead()].sort(byCreatedDesc) as TrackedWorkOrder[];
+  return [...mockRead()].map(normalizeDoc).sort(byCreatedDesc);
 }
 
 /** Lacak SATU work order berdasarkan nomor tracking — realtime.
@@ -303,7 +340,7 @@ export function trackWorkOrder(
       (snap) => {
         onData(
           snap.exists()
-            ? ({ id: snap.id, ...(snap.data() as Record<string, unknown>) } as TrackedWorkOrder)
+            ? normalizeDoc({ id: snap.id, ...(snap.data() as Record<string, unknown>) })
             : null
         );
       },
@@ -316,7 +353,7 @@ export function trackWorkOrder(
         String(w?.trackingNumber ?? '').toUpperCase() === number ||
         String(w?.id ?? '').toUpperCase() === number
     );
-    onData((found as TrackedWorkOrder) ?? null);
+    onData(found ? normalizeDoc(found) : null);
   };
   send();
   mockListeners.add(send);
@@ -329,8 +366,21 @@ export function trackWorkOrder(
 export async function createWorkOrder(input: NewWorkOrderInput): Promise<string> {
   const nowIso = new Date().toISOString();
   const initialStatus = String(input.status ?? 'New');
+
+  /* Field kompatibilitas untuk halaman dashboard LAMA (WorkOrderDetail,
+     DashboardHome, dll. yang membaca nama field versi lama).
+     Field baru tetap disimpan — dua-duanya tersimpan berdampingan. */
+  const compatFields: Record<string, unknown> = {
+    complainantName: input.reporterName ?? '',
+    waNumber: input.reporterPhone ?? '',
+    findingType: input.finding ?? input.category ?? '',
+    description: (input as Record<string, unknown>).description ?? input.finding ?? '',
+    reportedDate: input.reportedAt ?? nowIso,
+  };
+
   const base: Record<string, unknown> = {
     ...input,
+    ...compatFields,
     status: initialStatus,
     timeline: [{ status: initialStatus, at: nowIso }],
     createdAt: nowIso,
@@ -448,12 +498,12 @@ export async function getWorkOrderById(id: string): Promise<TrackedWorkOrder | n
   if (isFirebaseMode && db) {
     const snap = await getDoc(doc(db, WORKORDERS_COLLECTION, key));
     if (!snap.exists()) return null;
-    return { id: snap.id, ...(snap.data() as Record<string, unknown>) } as TrackedWorkOrder;
+    return normalizeDoc({ id: snap.id, ...(snap.data() as Record<string, unknown>) });
   }
   const found = mockRead().find(
     (w) => String(w?.id ?? '') === key || String(w?.trackingNumber ?? '').toUpperCase() === key
   );
-  return (found as TrackedWorkOrder) ?? null;
+  return found ? normalizeDoc(found) : null;
 }
 
 /** Versi async (Promise) dari trackWorkOrder — untuk kode lama. */

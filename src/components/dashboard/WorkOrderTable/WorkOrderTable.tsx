@@ -30,7 +30,7 @@ async function copyText(text: string) {
     document.body.appendChild(ta);
     ta.select();
     document.execCommand('copy');
-    document.body.removeChild(ta);
+    ta.remove();
   }
 }
 
