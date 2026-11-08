@@ -41,7 +41,7 @@ export default function App() {
                     <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                         <Route index element={<DashboardHome />} />
                         <Route path="work-orders" element={<WorkOrders />} />
-                        <Route path="work-orders/:id" element={<WorkOrderDetail />} />
+                        <Route path="work-orders/:id" element={<WorkOrderDetail />} />F
                         <Route path="my-tasks" element={<MyTasks />} />
                         <Route path="technicians" element={<Technicians />} />
                         <Route path="divisions" element={<DivisionsDash />} />
