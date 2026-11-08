@@ -21,6 +21,7 @@ const Locations = lazy(() => import("./pages/Dashboard/Locations/Locations"));
 const Reports = lazy(() => import("./pages/Dashboard/Reports/Reports"));
 const Users = lazy(() => import("./pages/Dashboard/Users/Users"));
 const Settings = lazy(() => import("./pages/Dashboard/Settings/Settings"));
+const Tracking = lazy(() => import('./pages/Tracking/Tracking'));
 
 export default function App() {
     return (
@@ -32,6 +33,7 @@ export default function App() {
                         <Route path="/divisions" element={<Divisions />} />
                         <Route path="/facilities" element={<Facilities />} />
                         <Route path="/work-order" element={<WorkOrder />} />
+                        <Route path="/tracking" element={<Tracking />} />   {/* ← BARU */}
                     </Route>
 
                     <Route path="/login" element={<Login />} />

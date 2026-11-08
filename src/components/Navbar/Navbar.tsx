@@ -9,10 +9,11 @@ import { useScrollY } from "../../hooks/useScrollY";
 import styles from "./Navbar.module.css";
 
 const LINKS = [
-    { to: "/", label: "HOME" },
-    { to: "/divisions", label: "DIVISIONS" },
-    { to: "/facilities", label: "FACILITIES" },
-    { to: "/work-order", label: "WORK ORDER" },
+    { to: '/', label: 'HOME', end: true },
+    { to: '/divisions', label: 'DIVISIONS' },
+    { to: '/facilities', label: 'FACILITIES' },
+    { to: '/work-order', label: 'WORK ORDER' },
+    { to: '/tracking', label: 'TRACKING' },   // ← tambah baris ini
 ];
 
 export default function Navbar() {

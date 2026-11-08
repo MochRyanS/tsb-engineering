@@ -1,0 +1,18 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* Koleksi workOrders:
+       - baca      : publik  → halaman /tracking & dashboard bisa membaca tanpa login
+       - buat      : publik  → form work order di website utama
+       - ubah      : publik  → dashboard admin (status/PIC) — auth masih mock
+       - hapus     : ditolak → data work order tidak boleh dihapus dari klien */
+    match /workOrders/{woId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if false;
+    }
+  }
+}
