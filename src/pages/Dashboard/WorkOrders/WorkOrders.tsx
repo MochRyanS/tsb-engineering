@@ -1,106 +1,214 @@
-﻿import { useMemo, useState } from "react";
-import { Plus, Search, RotateCcw, ClipboardList, CheckCircle2 } from "lucide-react";
-import { useWorkOrders } from "../../../hooks/useWorkOrders";
-import WorkOrderTable from "../../../components/dashboard/WorkOrderTable/WorkOrderTable";
-import Empty from "../../../components/ui/Empty/Empty";
-import Button from "../../../components/ui/Button/Button";
-import { DIVISIONS, PRIORITIES, STATUSES } from "../../../utils/constants";
-import styles from "./WorkOrders.module.css";
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Plus, RefreshCw, Search, AlertTriangle, Loader2 } from 'lucide-react';
+import {
+  subscribeWorkOrders,
+  isHistoryStatus,
+  normalizeStatusKey,
+  statusMetaOf,
+  type TrackedWorkOrder,
+} from '../../../services/workOrderService';
+import WorkOrderTable from '../../../components/dashboard/WorkOrderTable/WorkOrderTable';
+import styles from './WorkOrders.module.css';
+
+const STATUS_FILTERS = [
+  'New',
+  'Waiting Verification',
+  'Assigned',
+  'Verified',
+  'In Progress',
+  'Waiting Material',
+  'Quality Check',
+  'Completed',
+  'Cancelled',
+];
+
+const PRIORITY_FILTERS = ['HIGH', 'MID', 'LOW'];
 
 export default function WorkOrders() {
-  const { workOrders, loading } = useWorkOrders();
-  const [search, setSearch] = useState("");
-  const [division, setDivision] = useState("");
-  const [status, setStatus] = useState("");
-  const [priority, setPriority] = useState("");
+  const [workOrders, setWorkOrders] = useState<TrackedWorkOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const [search, setSearch] = useState('');
+  const [divisionFilter, setDivisionFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState('');
+
+  /* realtime subscription — admin melihat WO baru langsung tanpa refresh */
+  useEffect(() => {
+    const unsub = subscribeWorkOrders(
+      (list) => {
+        setWorkOrders(list);
+        setLoading(false);
+        setError('');
+      },
+      (err) => {
+        setError(
+          'Gagal memuat work order. Pastikan aturan keamanan Firestore mengizinkan pembacaan. (' +
+            String((err as Error)?.message ?? 'unknown') +
+            ')'
+        );
+        setLoading(false);
+      }
+    );
+    return () => unsub();
+  }, []);
+
+  const divisionOptions = useMemo(() => {
+    const set = new Set<string>();
+    workOrders.forEach((w) => {
+      if (w.division) set.add(String(w.division));
+    });
+    return Array.from(set).sort();
+  }, [workOrders]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return workOrders.filter((w) => {
-      if (division && w.division !== division) return false;
-      if (status && w.status !== status) return false;
-      if (priority && w.priority !== priority) return false;
-      if (q && ![w.woNumber, w.title, w.requesterName, w.location, w.pic ?? ""].join(" ").toLowerCase().includes(q)) return false;
-      return true;
+      if (divisionFilter && String(w.division ?? '') !== divisionFilter) return false;
+      if (statusFilter && normalizeStatusKey(w.status) !== normalizeStatusKey(statusFilter)) return false;
+      if (priorityFilter && normalizeStatusKey(w.priority) !== normalizeStatusKey(priorityFilter)) {
+        return false;
+      }
+      if (!q) return true;
+      const hay = [
+        w.trackingNumber,
+        w.id,
+        w.reporterName,
+        w.reporterPhone,
+        w.department,
+        w.location,
+        w.division,
+        w.category,
+        w.finding,
+        w.title,
+        w.description,
+        w.pic,
+      ]
+        .map((v) => String(v ?? '').toLowerCase())
+        .join(' | ');
+      return hay.includes(q);
     });
-  }, [workOrders, search, division, status, priority]);
+  }, [workOrders, search, divisionFilter, statusFilter, priorityFilter]);
 
-  const active = useMemo(
-    () => filtered.filter((w) => w.status !== "Completed" && w.status !== "Cancelled"),
-    [filtered]
-  );
-  const done = useMemo(
-    () => filtered.filter((w) => w.status === "Completed" || w.status === "Cancelled"),
-    [filtered]
-  );
+  const active = useMemo(() => filtered.filter((w) => !isHistoryStatus(w.status)), [filtered]);
+  const history = useMemo(() => filtered.filter((w) => isHistoryStatus(w.status)), [filtered]);
 
-  const reset = () => { setSearch(""); setDivision(""); setStatus(""); setPriority(""); };
+  function resetFilters() {
+    setSearch('');
+    setDivisionFilter('');
+    setStatusFilter('');
+    setPriorityFilter('');
+  }
 
   return (
     <div className={styles.page}>
-      <div className={styles.toolbar}>
-        <div className={styles.searchWrap}>
-          <Search size={16} />
-          <input value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari nomor WO, judul, requester, lokasi…" aria-label="Cari work order" />
+      <header className={styles.header}>
+        <div>
+          <p className={styles.breadcrumb}>ENGINEERING / WORK ORDERS</p>
+          <h1 className={styles.title}>WORK ORDERS</h1>
+          <p className={styles.desc}>
+            Daftar seluruh work order masuk — diperbarui secara{' '}
+            <b>real-time</b>. Klik nomor tracking pada baris tabel untuk menyalin.
+          </p>
         </div>
-        <select value={division} onChange={(e) => setDivision(e.target.value)} aria-label="Filter divisi" className={styles.filter}>
+        <Link to="/work-order" className={styles.btnNew}>
+          <Plus size={16} /> BUAT WO
+        </Link>
+      </header>
+
+      {/* toolbar */}
+      <div className={styles.toolbar}>
+        <div className={styles.searchBox}>
+          <Search size={16} className={styles.searchIcon} />
+          <input
+            className={styles.searchInput}
+            placeholder="Cari no. tracking, pelapor, departemen, lokasi…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <select
+          className={styles.select}
+          value={divisionFilter}
+          onChange={(e) => setDivisionFilter(e.target.value)}
+        >
           <option value="">Semua Divisi</option>
-          {DIVISIONS.map((d) => <option key={d} value={d}>{d}</option>)}
+          {divisionOptions.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
         </select>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter status" className={styles.filter}>
+        <select
+          className={styles.select}
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
           <option value="">Semua Status</option>
-          {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          {STATUS_FILTERS.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
         </select>
-        <select value={priority} onChange={(e) => setPriority(e.target.value)} aria-label="Filter prioritas" className={styles.filter}>
+        <select
+          className={styles.select}
+          value={priorityFilter}
+          onChange={(e) => setPriorityFilter(e.target.value)}
+        >
           <option value="">Semua Prioritas</option>
-          {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
+          {PRIORITY_FILTERS.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
         </select>
-        <Button variant="ghost" size="sm" icon={RotateCcw} onClick={reset}>RESET</Button>
-        <Button variant="dark" size="sm" icon={Plus} to="/work-order">BUAT WO</Button>
+        <button type="button" className={styles.btnReset} onClick={resetFilters}>
+          <RefreshCw size={14} /> RESET
+        </button>
       </div>
 
+      {error && (
+        <div className={styles.errorBanner}>
+          <AlertTriangle size={16} />
+          <span>{error}</span>
+        </div>
+      )}
+
       {loading ? (
-        <div className={styles.skeletonList}>
-          {Array.from({ length: 6 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 52 }} />)}
+        <div className={styles.loadingBox}>
+          <Loader2 size={22} className={styles.spin} />
+          <span>Memuat work order…</span>
         </div>
       ) : (
         <>
-          <section className={styles.group}>
-            <header className={styles.groupHead}>
-              <h3 className={styles.groupTitle}>
-                <ClipboardList size={14} />WORK ORDER AKTIF
-                <span className={styles.countChip}>{active.length}</span>
-              </h3>
-            </header>
-            {active.length > 0 ? (
-              <WorkOrderTable orders={active} />
-            ) : (
-              <div className={styles.emptyWrap}>
-                <Empty icon={ClipboardList} title="Tidak ada work order aktif"
-                  desc="Tidak ada work order berjalan yang cocok dengan filter. Coba reset filter atau ubah kata kunci.">
-                  <Button variant="outline" size="sm" onClick={reset}>RESET FILTER</Button>
-                </Empty>
-              </div>
+          <p className={styles.count}>
+            <b>{filtered.length}</b> work order ditemukan ·{' '}
+            <b>{active.length}</b> aktif · <b>{history.length}</b> riwayat
+            {loading === false && workOrders.length > 0 && (
+              <>
+                {' '}
+                · status terakhir:{' '}
+                {statusMetaOf(workOrders[0]?.status).label}
+              </>
             )}
-          </section>
+          </p>
 
-          <section className={styles.group}>
-            <header className={styles.groupHead}>
-              <h3 className={styles.groupTitle}>
-                <CheckCircle2 size={14} />RIWAYAT — SELESAI &amp; DIBATALKAN
-                <span className={styles.countChip}>{done.length}</span>
-              </h3>
-            </header>
-            {done.length > 0 ? (
-              <WorkOrderTable orders={done} />
-            ) : (
-              <div className={styles.emptyWrap}>
-                <Empty icon={CheckCircle2} title="Belum ada riwayat"
-                  desc="Belum ada work order yang berstatus selesai atau dibatalkan." />
-              </div>
-            )}
-          </section>
+          <WorkOrderTable
+            workOrders={active}
+            title={`WORK ORDER AKTIF (${active.length})`}
+            emptyLabel="Tidak ada work order aktif untuk filter ini."
+          />
+
+          <div className={styles.gap} />
+
+          <WorkOrderTable
+            workOrders={history}
+            title={`RIWAYAT — SELESAI / DIBATALKAN (${history.length})`}
+            emptyLabel="Belum ada work order selesai atau dibatalkan."
+          />
         </>
       )}
     </div>

@@ -1,124 +1,84 @@
-/** @jsx React.createElement */
-import * as React from "react";
-import { useState } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import { HardHat, Menu, X, LogIn, LayoutDashboard } from "lucide-react";
-import { useAuth } from "../../hooks/useAuth";
-import { useScrollY } from "../../hooks/useScrollY";
-import styles from "./Navbar.module.css";
+import { useEffect, useState } from 'react';
+import { Link, NavLink } from 'react-router-dom';
+import { Menu, X, LayoutDashboard } from 'lucide-react';
+import styles from './Navbar.module.css';
 
 const LINKS = [
-    { to: '/', label: 'HOME', end: true },
-    { to: '/divisions', label: 'DIVISIONS' },
-    { to: '/facilities', label: 'FACILITIES' },
-    { to: '/work-order', label: 'WORK ORDER' },
-    { to: '/tracking', label: 'TRACKING' },   // ← tambah baris ini
+  { to: '/', label: 'HOME', end: true },
+  { to: '/divisions', label: 'DIVISIONS' },
+  { to: '/facilities', label: 'FACILITIES' },
+  { to: '/work-order', label: 'WORK ORDER' },
+  { to: '/tracking', label: 'TRACKING' },
 ];
 
 export default function Navbar() {
-    const [open, setOpen] = useState(false);
-    const scrolled = useScrollY(40);
-    const { pathname } = useLocation();
-    const { user } = useAuth();
-    const transparent = pathname === "/" && !scrolled && !open;
+  const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
 
-    return React.createElement(
-        "header",
-        { className: [styles.nav, transparent ? styles.transparent : styles.solid].join(" ") },
-        React.createElement(
-            "div",
-            { className: styles.inner },
-            React.createElement(
-                Link,
-                { to: "/", className: styles.brand, "aria-label": "Beranda Engineering TSB" },
-                React.createElement("span", { className: styles.mark }, React.createElement(HardHat, { size: 18 })),
-                React.createElement(
-                    "span",
-                    { className: styles.brandText },
-                    React.createElement("strong", null, "ENGINEERING"),
-                    React.createElement("small", null, "TAMAN SAFARI BOGOR")
-                )
-            ),
-            React.createElement(
-                "nav",
-                { className: styles.links, "aria-label": "Navigasi utama" },
-                ...LINKS.map((l) =>
-                    React.createElement(
-                        NavLink,
-                        {
-                            key: l.to,
-                            to: l.to,
-                            end: l.to === "/",
-                            className: ({ isActive }: { isActive: boolean }) =>
-                                [styles.link, isActive ? styles.active : ""].join(" "),
-                        },
-                        l.label
-                    )
-                )
-            ),
-            React.createElement(
-                "div",
-                { className: styles.actions },
-                user
-                    ? React.createElement(
-                        Link,
-                        { to: "/dashboard", className: styles.loginBtn },
-                        React.createElement(LayoutDashboard, { size: 15 }),
-                        "DASHBOARD"
-                    )
-                    : React.createElement(
-                        Link,
-                        { to: "/login", className: styles.loginBtn },
-                        React.createElement(LogIn, { size: 15 }),
-                        "LOGIN"
-                    ),
-                React.createElement(
-                    "button",
-                    {
-                        className: styles.burger,
-                        "aria-label": open ? "Tutup menu" : "Buka menu",
-                        "aria-expanded": open,
-                        onClick: () => setOpen((v: any) => !v),
-                    },
-                    open ? React.createElement(X, { size: 20 }) : React.createElement(Menu, { size: 20 })
-                )
-            )
-        ),
-        React.createElement(
-            AnimatePresence,
-            null,
-            open &&
-            React.createElement(
-                motion.nav,
-                {
-                    className: styles.mobileMenu,
-                    "aria-label": "Menu mobile",
-                    initial: { height: 0, opacity: 0 },
-                    animate: { height: "auto", opacity: 1 },
-                    exit: { height: 0, opacity: 0 },
-                    transition: { duration: 0.3, ease: "easeOut" },
-                },
-                ...LINKS.map((l) =>
-                    React.createElement(
-                        NavLink,
-                        {
-                            key: l.to,
-                            to: l.to,
-                            end: l.to === "/",
-                            onClick: () => setOpen(false),
-                            className: ({ isActive }: { isActive: boolean }) =>
-                                [styles.mobileLink, isActive ? styles.mobileActive : ""].join(" "),
-                        },
-                        l.label
-                    )
-                ),
-                React.createElement(
-                    Link,
-                    { to: user ? "/dashboard" : "/login", onClick: () => setOpen(false), className: styles.mobileLogin },
-                    user ? "DASHBOARD" : "LOGIN"
-                )
-            )
-        )
-    );
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  return (
+    <header className={`${styles.nav} ${scrolled ? styles.navScrolled : ''}`}>
+      <div className={styles.inner}>
+        <Link to="/" className={styles.logo} onClick={() => setOpen(false)}>
+          <span className={styles.logoTop}>ENGINEERING</span>
+          <span className={styles.logoBottom}>TAMAN SAFARI BOGOR</span>
+        </Link>
+
+        {/* desktop */}
+        <nav className={styles.links} aria-label="Navigasi utama">
+          {LINKS.map((l) => (
+            <NavLink
+              key={l.to}
+              to={l.to}
+              end={l.end}
+              className={({ isActive }) => `${styles.link} ${isActive ? styles.linkActive : ''}`}
+            >
+              {l.label}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className={styles.right}>
+          <Link to="/dashboard" className={styles.cta}>
+            <LayoutDashboard size={15} />
+            DASHBOARD
+          </Link>
+          <button
+            type="button"
+            className={styles.burger}
+            onClick={() => setOpen((o) => !o)}
+            aria-label="Buka menu"
+          >
+            {open ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
+      </div>
+
+      {/* mobile */}
+      {open && (
+        <nav className={styles.mobile} aria-label="Navigasi utama (mobile)">
+          {LINKS.map((l) => (
+            <NavLink
+              key={l.to}
+              to={l.to}
+              end={l.end}
+              className={({ isActive }) => `${styles.mLink} ${isActive ? styles.mLinkActive : ''}`}
+              onClick={() => setOpen(false)}
+            >
+              {l.label}
+            </NavLink>
+          ))}
+          <Link to="/dashboard" className={styles.mCta} onClick={() => setOpen(false)}>
+            <LayoutDashboard size={15} /> DASHBOARD
+          </Link>
+        </nav>
+      )}
+    </header>
+  );
 }
