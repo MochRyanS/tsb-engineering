@@ -35,13 +35,6 @@ export const divisionInfos: DivisionInfo[] = [
         head: "Dedi Rustandi", headcount: 7,
         liveStatusKey: undefined
     },
-    {
-        id: "General Technicion", tagline: "Admin Departemen Engineering",
-        description: "Bertanggung jawab atas Administration Departemen Engineering.",
-        scope: ["Admin Departemen Engineering"],
-        head: "Wawan Setiawan", headcount: 10,
-        liveStatusKey: undefined
-    },
 ];
 
 export const liveStatus: Record<Division, DivisionStatus> = {

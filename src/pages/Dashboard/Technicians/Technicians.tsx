@@ -34,16 +34,28 @@ interface TechRow {
 /** Daftar teknisi tetap (master roster) — identitas & ketersediaan.
  *  Silakan sesuaikan dengan teknisi asli departemen Engineering. */
 const ROSTER: TechRow[] = [
-  { id: 't1', name: 'Budi Santoso', division: 'Electrical', role: 'Teknisi Senior', status: 'Available' },
-  { id: 't2', name: 'Joko Prasetyo', division: 'Mechanical', role: 'Teknisi Senior', status: 'On Duty' },
-  { id: 't3', name: 'Asep Kurnia', division: 'Civil', role: 'Mandor', status: 'Available' },
-  { id: 't4', name: 'Dedi Rustandi', division: 'Plumbing', role: 'Teknisi', status: 'Available' },
-  { id: 't5', name: 'Eko Saputra', division: 'Mechanical', role: 'Teknisi', status: 'On Duty' },
-  { id: 't6', name: 'Rina Marlina', division: 'Electrical', role: 'Teknisi', status: 'Available' },
-  { id: 't7', name: 'Yusuf Hamdani', division: 'Civil', role: 'Teknisi', status: 'Off Duty' },
-  { id: 't8', name: 'Putra Gani', division: 'Plumbing', role: 'Teknisi Junior', status: 'Available' },
-  { id: 't9', name: 'Hendra Saputra', division: 'Electrical', role: 'Teknisi Junior', status: 'On Duty' },
-  { id: 't10', name: 'Wawan Setiawan', division: 'Mechanical', role: 'Kepala Teknisi', status: 'Available' },
+  { id: 't1', name: 'Suwanto', division: 'Electrical', role: 'SPV Engineer', status: 'On Duty' },
+  { id: 't2', name: 'Aji Aryanto', division: 'Electrical', role: 'Teknisi', status: 'On Duty' },
+  { id: 't3', name: 'Didi Sunardi', division: 'Electrical', role: 'Teknisi', status: 'On Duty' },
+  { id: 't4', name: 'M. Ismail', division: 'Electrical', role: 'Teknisi', status: 'On Duty' },
+  { id: 't5', name: 'Fikri Adam', division: 'Electrical', role: 'Teknisi', status: 'On Duty' },
+  { id: 't6', name: 'Edhi Suparman', division: 'Electrical', role: 'Teknisi', status: 'On Duty' },
+  { id: 't7', name: 'Jaka Gitaya', division: 'Electrical', role: 'Teknisi', status: 'On Duty' },
+  { id: 't8', name: 'Hermanudin', division: 'Electrical', role: 'Teknisi', status: 'On Duty' },
+  { id: 't9', name: 'Ade Wahyudin', division: 'Electrical', role: 'Teknisi', status: 'On Duty' },
+  { id: 't10', name: 'Arifin', division: 'Electrical', role: 'Kepala Teknisi', status: 'On Duty' },
+  { id: 't11', name: 'M. Didin', division: 'Plumbing', role: 'Teknisi', status: 'On Duty' },
+  { id: 't12', name: 'Daudi Lutang', division: 'Plumbing', role: 'Teknisi', status: 'On Duty' },
+  { id: 't13', name: 'Usep Saepudin', division: 'Civil', role: 'Teknisi', status: 'On Duty' },
+  { id: 't14', name: 'Tim Civil', division: 'Civil', role: 'Teknisi', status: 'On Duty' },
+  { id: 't15', name: 'Tatang Supriatna', division: 'Mechanical', role: 'Teknisi', status: 'On Duty' },
+  { id: 't16', name: 'Deni Supriadi', division: 'Mechanical', role: 'Teknisi', status: 'On Duty' },
+  { id: 't17', name: 'Ismayadhi', division: 'Mechanical', role: 'SPV Teknisi', status: 'On Duty' },
+  { id: 't18', name: 'Bois Sianippar', division: 'Mechanical', role: 'Teknisi', status: 'On Duty' },
+  { id: 't19', name: 'Tim Maintenance', division: 'Mechanical', role: 'Teknisi', status: 'On Duty' },
+  { id: 't20', name: 'Tim Aspald', division: 'Mechanical', role: 'Teknisi', status: 'On Duty' },
+  { id: 't21', name: 'Tim Las', division: 'Mechanical', role: 'Teknisi', status: 'On Duty' },
+  { id: 't22', name: 'Tim Bengkel', division: 'Mechanical', role: 'Teknisi', status: 'On Duty' },
 ];
 
 const CLOSED_STATUSES = [
