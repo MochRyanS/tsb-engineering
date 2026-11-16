@@ -1,76 +1,78 @@
 =========================================================
-PAKET REVISI 7 — NAMA TEKNISI ASLI (22 PERSONIL)
+PAKET REVISI 8 — HAPUS FACILITIES + PERBAIKI TOMBOL HERO
 =========================================================
 
-KENAPA KEMARIN NAMA TIDAK BERUBAH DI WEBSITE?
----------------------------------------------
-Ada 2 penyebab sekaligus:
+APA YANG DIPERBAIKI?
+--------------------
+1. HALAMAN FACILITIES DIHAPUS.
+   - Menu "FACILITIES" di navbar hilang.
+   - Halaman /facilities tidak ada lagi. URL lama /facilities
+     (bookmark atau link lama) otomatis dialihkan ke halaman Home.
 
-1. FILE YANG DIEDIT TIDAK DIPAKAI SITUS.
-   Anda mengedit "src/data/mockTechnicians.ts". File itu adalah
-   sisa template LAMA dan TIDAK dibaca oleh halaman Technicians
-   yang sekarang. Daftar nama yang benar-benar dipakai ada di:
-     - src/pages/Dashboard/Technicians/Technicians.tsx  (daftar ROSTER)
-   Jadi walaupun file itu diubah, halaman tidak akan berubah.
+2. TOMBOL "CREATE WORK ORDER", "OUR DIVISIONS" (hero, halaman depan)
+   DAN TOMBOL MENGAMBANG "+ CREATE WORK ORDER" (pojok kanan bawah)
+   SEKARANG BERFUNGSI.
+   Akar masalahnya: tombol-tombol itu memakai link gaya lama
+   "#/work-order" (pakai tanda #). Website ini memakai router tanpa
+   tanda #, jadi klik tombol hanya menambah "#..." di belakang URL —
+   halaman tidak pernah pindah. Sekarang ada komponen HashRedirect
+   yang otomatis mengalihkan semua link gaya itu ke halaman yang
+   benar, jadi tombol hero + tombol mengambang langsung berfungsi
+   tanpa mengubah file halaman Anda.
 
-2. BELUM DI-PUSH KE GITHUB.
-   Mengedit file di VSCode saja TIDAK mengubah website. Perubahan
-   baru sampai ke website setelah "git push" DAN deploy Vercel
-   selesai dengan status HIJAU "Ready". Setiap kali mengubah kode,
-   langkah push + cek deploy WAJIB dilakukan.
+FILE YANG WAJIB DIPASANG untuk update ini (3 file):
+---------------------------------------------------
+  1. src/App.tsx                                (DIUBAH)
+  2. src/components/Navbar.tsx                  (DIUBAH)
+  3. src/components/HashRedirect.tsx            (FILE BARU)
 
-APA YANG DIUBAH DI PAKET INI?
------------------------------
-Daftar teknisi (ROSTER) diganti dengan 22 personil asli departemen
-Engineering:
+File lain di zip ini adalah perbaikan Revisi 4-7 (kumulatif) —
+boleh ikut ditempel (aman), tapi minimal 3 file di atas harus
+masuk supaya perubahan ini bekerja.
 
-  ELECTRICAL (10): Swanto (SPV Engineer), Aji Aryanto, Didi Sunardi,
-    M. Ismail, Fikri Adam, Edhi Suparman (Teknisi Junior),
-    Jaka Gitaya (Teknisi Junior), Hermanudin, Ade Wahyudin, Arifin
-  PLUMBING (2): M. Didin, Daudi Lutang
-  CIVIL (2): Usep Saepudin, Tim Civil
-  MECHANICAL (8): Tatang Supriatna, Deni Supriadi, Ismayadhi,
-    Bois Sianippar, Tim Maintenance, Tim Aspald, Tim Las, Tim Bengkel
+SETELAH FILE DITEMPEL (PILIHAN, OPSIONAL):
+------------------------------------------
+- Folder "src/pages/Facilities" di proyek Anda boleh DIHAPUS
+  (klik kanan folder > Delete). TAPI hati-hati urutannya: TEMPEL
+  DULU file App.tsx yang baru, BARU hapus foldernya. Kalau tidak
+  yakin, biarkan saja foldernya — tidak berefuk apa pun karena
+  sudah tidak dipakai.
 
-Catatan:
-- "Tim Civil" saya masukkan ke divisi CIVIL (di data Anda tertulis
-  Mechanical — kemungkinan salah tempel). Kalau memang salah, kabari
-  saya atau edit langsung barisnya di Technicians.tsx.
-- Semua status ketersediaan saya set "Available".
-- Angka Active Tasks / Completed dihitung otomatis dari WO yang
-  PIC-nya persis sama dengan nama di daftar (mulai dari 0).
+CATATAN SOAL FOOTER:
+--------------------
+Di bagian paling bawah website ada link kecil "Facilities" yang
+berasal dari file Footer di proyek Anda (file itu tidak termasuk
+paket ini). Setelah update ini, link tersebut hanya membawa ke
+halaman Home. Kalau ingin menghapus tulisannya juga: buka file
+Footer di proyek Anda (src/components/Footer), hapus baris yang
+berisi label `Facilities`.
 
-File "src/data/mockTechnicians.ts" lama BOLEH DIHAPUS dari proyek
-(tidak dipakai), atau dibiarkan juga tidak masalah.
-
-CARA PASANG (5 MENIT)
----------------------
-1. Download "update-revisi-7.zip" lalu ekstrak (klik kanan > Extract).
-2. Buka folder hasil ekstrak. Di dalamnya ada folder "src" dan file
-   "firestore.rules".
-3. Copy SEMUA isi folder "src" ke dalam folder proyek website Anda
-   (C:\program\website-WO\src) -> pilih REPLACE / TIMPA file.
-4. (Hanya jika belum pernah) Buka firestore.rules, copy isinya ke
-   Firebase Console > Firestore Database > Rules > Publish.
-5. Buka Terminal di VSCode (menu Terminal > New Terminal), ketik:
+CARA PASANG
+-----------
+1. Download "update-revisi-8.zip" lalu ekstrak.
+2. Copy folder "src" ke folder proyek website Anda
+   (C:\program\website-WO) -> pilih REPLACE / TIMPA file.
+   (File HashRedirect.tsx otomatis masuk ke src\components.)
+3. Terminal VSCode:
 
      git add .
-     git commit -m "revisi 7: nama teknisi asli"
+     git status        <- cek file yang ikut ter-upload
+     git commit -m "hapus facilities + perbaiki tombol hero"
      git push
 
-6. BUKA VERCEL.COM > project Anda > tab Deployments. TUNGU sampai
-   deployment terbaru berstatus HIJAU "Ready".
-   Kalau MERAH "Error": klik deployment itu, screenshot pesan
-   errornya, kirim ke saya. SELAMA MASIH MERAH, situs tetap
-   memakai versi lama.
-7. Buka website, tekan Ctrl + Shift + R (hard refresh). Buka menu
-   Technicians -> yang tampil harus 22 nama asli, tanpa kartu
-   Performance, angka mulai dari 0.
+   (Tulisan dalam tanda kutip bebas — catatan saja.)
+4. Buka vercel.com > project Anda > Deployments > tunggu HIJAU
+   "Ready". Kalau MERAH: klik deployment, screenshot errornya,
+   kirim ke saya.
+5. Buka website, tekan Ctrl + Shift + R (hard refresh).
 
-PENTING UNTUK KE DEPANNYA
--------------------------
-- File mockData apa pun (mockTechnicians, mockUsers, mockWorkOrders,
-  mockLocations) TIDAK dipakai situs — jangan diedit untuk mengubah
-  isi website.
-- Data WO & tracking disimpan di Firestore (Firebase), bukan di file.
-- Setiap selesai mengubah kode: push + pastikan deploy Vercel hijau.
+CEK HASILNYA
+------------
+- Navbar: menu FACILITIES sudah tidak ada.
+- Ketik manual alamat .../facilities -> otomatis kembali ke Home.
+- Halaman depan: klik "CREATE WORK ORDER" -> masuk halaman form
+  Work Order. Klik "OUR DIVISIONS" -> masuk halaman Divisions.
+- Tombol mengambang "+ CREATE WORK ORDER" di pojok kanan bawah ->
+  masuk halaman form Work Order.
+- Menu Technicians: 22 nama teknisi asli (bawaan Revisi 7), tanpa
+  kartu Performance.
