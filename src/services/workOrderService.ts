@@ -48,12 +48,19 @@ export interface NewWorkOrderInput {
 
 /* ---------- Konstanta ---------- */
 
+/* KOLEKSI UTAMA: 'workorders' (huruf kecil semua) — koleksi ASLI proyek
+   ini yang berisi seluruh WO lama (WO-2026-0000x, dst.) dan tempat semua
+   WO baru ditulis. Koleksi 'workOrders' (camelCase) adalah koleksi
+   warisan dari update sebelumnya — hanya dibaca sebagai cadangan, lalu
+   isinya otomatis disalin ke koleksi utama (sekali per sesi). */
 export const WORKORDERS_COLLECTION = 'workorders';
 export const LEGACY_COLLECTION = 'workOrders';
 
 const TN_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
-/* ---------- Deteksi mode (Firebase / Mock) ---------- */
+/* ---------- Deteksi mode (Firebase / Mock) ----------
+   Membaca `db` dari firebaseClient dengan beberapa nama kandidat
+   agar tetap kompatibel bila nama ekspor berbeda. */
 
 const clientRef = firebaseClient as unknown as Record<string, unknown>;
 
@@ -90,6 +97,8 @@ export function generateTrackingNumber(): string {
   return `WO-${yy}${mm}${dd}-${randomSuffix()}`;
 }
 
+/** Menormalkan input user: huruf besar, tanpa spasi, selaika
+    polanya cocok, tanda hubung otomatis disisipkan. */
 export function formatTrackingInput(raw: string): string {
   const s = (raw || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   const m = /^WO(\d{6})([A-Z0-9]{4,})$/.exec(s);
@@ -132,11 +141,13 @@ export function statusMetaOf(status: unknown): { label: string; tone: string } {
   return STATUS_META[key] ?? { label: prettifyLabel(status), tone: 'gray' };
 }
 
+/** true = masuk tabel RIWAYAT (selesai / dibatalkan) */
 export function isHistoryStatus(status: unknown): boolean {
   const key = normalizeStatusKey(status);
   return ['completed', 'done', 'selesai', 'cancelled', 'canceled', 'dibatalkan'].includes(key);
 }
 
+/** Step untuk stepper halaman tracking: 1 Dilaporkan, 2 Diproses, 3 Selesai, -1 Dibatalkan */
 export function statusStep(status: unknown): number {
   const key = normalizeStatusKey(status);
   if (['cancelled', 'canceled', 'dibatalkan'].includes(key)) return -1;
@@ -206,7 +217,12 @@ function byCreatedDesc(a: Record<string, unknown>, b: Record<string, unknown>): 
   return tb - ta;
 }
 
-/* ---------- Normalisasi dokumen ---------- */
+/* ---------- Normalisasi dokumen (REVISI 3) ----------
+   Dashboard lama memanggil `createdAt.slice(...)` — menganggapnya STRING.
+   Service baru menyimpan Timestamp Firestore (objek) → TypeError → blank page.
+   Solusi: SEMUA field tanggal dinormalkan menjadi string ISO sebelum keluar
+   dari service, sehingga kompatibel untuk `.slice()`, `new Date()`, dan
+   helper `toDateValue()`/`formatDate()` di file baru. */
 
 const DATE_FIELDS = [
   'createdAt',
@@ -220,9 +236,11 @@ const DATE_FIELDS = [
 
 function toIsoString(v: unknown): unknown {
   if (v === null || v === undefined) return v;
-  if (typeof v === 'string') return v;
+  if (typeof v === 'string') return v; // sudah string — biarkan
   if (typeof v === 'number') return new Date(v).toISOString();
-  const d = toDateValue(v);
+  const d = toDateValue(v); // Timestamp / {seconds} / {toDate} → Date
+  /* Objek tanggal yang tidak dikenali (mis. hasil serialisasi yang
+     kehilangan metode) → string kosong, supaya aman untuk .slice() dsb. */
   return d ? d.toISOString() : '';
 }
 
@@ -237,6 +255,12 @@ function normalizeDoc(raw: Record<string, unknown>): TrackedWorkOrder {
     );
   }
 
+  /* --- Alias DUA ARAH nama field (halaman lama vs baru) ---
+     Detail lama membaca: requesterName, contactNumber, jenisPekerjaan,
+     tanggalDilaporkan, woNumber. Form baru menyimpan: reporterName,
+     reporterPhone, workType, reportedAt, trackingNumber. Dengan alias
+     dua arah, SEMUA halaman (lama & baru) bisa membaca SEMUA dokumen
+     (lama & baru). */
   const aliasPairs: [string, string][] = [
     ['requesterName', 'reporterName'],
     ['requesterName', 'complainantName'],
@@ -266,6 +290,10 @@ function normalizeDoc(raw: Record<string, unknown>): TrackedWorkOrder {
     }
   }
 
+  /* --- Jaminan field ARRAY: halaman detail lama memanggil
+     .length / .map() pada photos, activity, notes, materials
+     tanpa guard → wajib selalu berupa array. `activity` diturunkan
+     dari `timeline` (riwayat status) bila belum ada. --- */
   if (!Array.isArray(out.photos)) out.photos = [];
   if (!Array.isArray(out.notes)) out.notes = [];
   if (!Array.isArray(out.materials)) out.materials = [];
@@ -320,8 +348,9 @@ function mockEmit(): void {
   });
 }
 
-/* ---------- Helper koleksi ganda ---------- */
+/* ---------- Helper koleksi ganda (utama + warisan) ---------- */
 
+/** Cari ref dokumen di koleksi utama, lalu koleksi warisan. */
 async function findDocRef(id: string): Promise<DocumentReference | null> {
   if (!(isFirebaseMode && db)) return null;
   const candidates = [doc(db, WORKORDERS_COLLECTION, id), doc(db, LEGACY_COLLECTION, id)];
@@ -330,12 +359,13 @@ async function findDocRef(id: string): Promise<DocumentReference | null> {
       const snap = await getDoc(ref);
       if (snap.exists()) return ref;
     } catch {
-      /* lanjut */
+      /* koleksi ini mungkin ditolak rules — lanjut kandidat berikutnya */
     }
   }
   return null;
 }
 
+/** Gabungkan dua daftar (utama menang bila ID sama). */
 function mergeLists(main: TrackedWorkOrder[], legacy: TrackedWorkOrder[]): TrackedWorkOrder[] {
   const seen = new Set<string>();
   const out: TrackedWorkOrder[] = [];
@@ -348,6 +378,7 @@ function mergeLists(main: TrackedWorkOrder[], legacy: TrackedWorkOrder[]): Track
   return out.sort(byCreatedDesc);
 }
 
+/** resolve arrayUnion() untuk mode mock (localStorage). */
 function resolveFieldValue(existing: unknown, value: unknown): unknown {
   const sentinel = value as { _methodName?: string; _elements?: unknown[] } | null;
   if (sentinel && typeof sentinel === 'object' && sentinel._methodName === 'arrayUnion') {
@@ -360,32 +391,124 @@ function resolveFieldValue(existing: unknown, value: unknown): unknown {
 
 let migrationPromise: Promise<void> | null = null;
 
+/** Sekali per sesi: salin WO dari koleksi warisan 'workOrders' (camelCase)
+ *  ke koleksi utama 'workorders' bila belum ada — supaya seluruh data
+ *  berada di satu tempat dan terlihat di semua halaman (termasuk halaman
+ *  lama yang berlangganan realtime hanya ke koleksi utama). */
 function migrateLegacyOnce(): Promise<void> {
   if (!isFirebaseMode || !db) return Promise.resolve();
-  migrationPromise ??= (async () => {
-    try {
-      const legacySnap = await getDocs(collection(db, LEGACY_COLLECTION));
-      for (const d of legacySnap.docs) {
-        try {
-          const main = await getDoc(doc(db, WORKORDERS_COLLECTION, d.id));
-          if (main.exists()) continue;
-          const normalized = normalizeDoc({ ...(d.data() as Record<string, unknown>), id: d.id });
-          const { id: _ignored, ...data } = normalized as Record<string, unknown>;
-          void _ignored;
-          await setDoc(doc(db, WORKORDERS_COLLECTION, d.id), data);
-        } catch {
-          /* lanjut */
+  if (!migrationPromise) {
+    migrationPromise = (async () => {
+      try {
+        const legacySnap = await getDocs(collection(db, LEGACY_COLLECTION));
+        for (const d of legacySnap.docs) {
+          try {
+            const main = await getDoc(doc(db, WORKORDERS_COLLECTION, d.id));
+            if (main.exists()) continue;
+            const normalized = normalizeDoc({ ...(d.data() as Record<string, unknown>), id: d.id });
+            const { id: _ignored, ...data } = normalized as Record<string, unknown>;
+            void _ignored;
+            await setDoc(doc(db, WORKORDERS_COLLECTION, d.id), data);
+          } catch {
+            /* satu dokumen gagal — lanjut dokumen berikutnya */
+          }
         }
+      } catch {
+        /* koleksi warisan tidak terbaca — abaikan */
       }
-    } catch {
-      /* lanjut */
-    }
-  })();
+
+      /* --- REVISI 4: lengkapi bentuk dokumen di koleksi utama ---
+         Dokumen yang dibuat SEBELUM update ini tidak memiliki field
+         array (activity, notes, materials, photos) maupun alias nama
+         field lama (requesterName, contactNumber, woNumber,
+         jenisPekerjaan, tanggalDilaporkan). Halaman detail lama
+         membaca dokumen mentah lewat listener realtime-nya sendiri
+         (WorkOrderProvider) TANPA normalisasi → H.activity.map(...)
+         ikut crash dan halaman detail tampil kosong. Di sini setiap
+         dokumen yang kurang dilengkapi SEKALI per sesi — hanya field
+         yang benar-benar kurang yang ditulis (updateDoc), sehingga
+         aman untuk data yang sudah ada. */
+      try {
+        const mainSnap = await getDocs(collection(db, WORKORDERS_COLLECTION));
+        for (const d of mainSnap.docs) {
+          try {
+            const raw = d.data() as Record<string, unknown>;
+            const patch: Record<string, unknown> = {};
+            const timeline = Array.isArray(raw.timeline)
+              ? (raw.timeline as Record<string, unknown>[])
+              : [];
+            if (!Array.isArray(raw.photos)) patch.photos = [];
+            if (!Array.isArray(raw.notes)) patch.notes = [];
+            if (!Array.isArray(raw.materials)) patch.materials = [];
+            if (!Array.isArray(raw.activity)) {
+              patch.activity = timeline.map((t, i) => ({
+                id: `act-${i + 1}`,
+                action: `Status: ${String(t?.status ?? '—')}`,
+                note: '',
+                date: toIsoString(t?.at),
+                by: 'System',
+              }));
+            }
+            const pickStr = (...vals: unknown[]): string => {
+              for (const v of vals) {
+                if (typeof v === 'string' && v.trim()) return v;
+              }
+              return '';
+            };
+            const aliasIfMissing = (key: string, ...sources: unknown[]) => {
+              if (typeof raw[key] === 'string' && String(raw[key]).trim()) return;
+              const v = pickStr(...sources);
+              if (v) patch[key] = v;
+            };
+            aliasIfMissing('requesterName', raw.reporterName, raw.complainantName);
+            aliasIfMissing('contactNumber', raw.reporterPhone, raw.waNumber);
+            aliasIfMissing('woNumber', raw.trackingNumber, d.id);
+            aliasIfMissing('jenisPekerjaan', raw.workType, raw.category);
+            aliasIfMissing(
+              'tanggalDilaporkan',
+              raw.reportedAt,
+              raw.reportedDate,
+              raw.reportDate,
+              raw.createdAt !== undefined ? toIsoString(raw.createdAt) : ''
+            );
+            aliasIfMissing('reporterName', raw.requesterName, raw.complainantName);
+            aliasIfMissing('complainantName', raw.reporterName, raw.requesterName);
+            aliasIfMissing('waNumber', raw.reporterPhone);
+            aliasIfMissing('reporterPhone', raw.waNumber, raw.contactNumber);
+            aliasIfMissing('findingType', raw.finding, raw.category);
+            aliasIfMissing('title', raw.finding, raw.description);
+            aliasIfMissing('description', raw.finding);
+            if (Object.keys(patch).length > 0) {
+              await updateDoc(doc(db, WORKORDERS_COLLECTION, d.id), patch);
+            }
+          } catch {
+            /* satu dokumen gagal dilengkapi — lanjut dokumen berikutnya */
+          }
+        }
+      } catch {
+        /* koleksi utama tidak terbaca — abaikan */
+      }
+    })();
+  }
   return migrationPromise;
 }
 
 /* ---------- API utama ---------- */
 
+/** Deteksi error tabrakan ID dokumen (nomor tracking kembar). */
+function isAlreadyExistsError(err: unknown): boolean {
+  const anyErr = err as { code?: string; message?: string };
+  return (
+    String(anyErr?.code ?? '') === 'already-exists' ||
+    /already exists/i.test(String(anyErr?.message ?? ''))
+  );
+}
+
+/** Berlangganan seluruh work order (urut terbaru) — realtime.
+ *  Koleksi utama disertai realtime; koleksi warisan dimuat sekali lalu
+ *  digabung (setelah dicoba dipindahkan ke koleksi utama).
+ *  Bila koleksi utama ditolak rules, otomatis berlangganan ke koleksi
+ *  warisan (REVISI 6) sehingga daftar tetap hidup tanpa pesan error. */
 export function subscribeWorkOrders(
   onData: (list: TrackedWorkOrder[]) => void,
   onError?: (error: unknown) => void
@@ -393,18 +516,46 @@ export function subscribeWorkOrders(
   if (isFirebaseMode && db) {
     let mainList: TrackedWorkOrder[] = [];
     let legacyExtra: TrackedWorkOrder[] = [];
+    let sourceOk = false; // minimal satu sumber data realtime berhasil
+    let reported = false; // onError sudah dipanggil — jangan dobel
+    let unsubFallback: (() => void) | null = null;
+
     const emit = () => {
       onData(mergeLists(mainList, legacyExtra));
     };
+    const reportError = (err: unknown) => {
+      if (sourceOk || reported) return;
+      reported = true;
+      onError?.(err);
+    };
+
     const unsubMain = onSnapshot(
       collection(db, WORKORDERS_COLLECTION),
       (snap) => {
+        sourceOk = true;
         mainList = snap.docs.map((d) =>
           normalizeDoc({ id: d.id, ...(d.data() as Record<string, unknown>) })
         );
         emit();
       },
-      (err) => onError?.(err)
+      (errMain) => {
+        /* REVISI 6: koleksi utama ditolak rules (mis. rules lama hanya
+           mengizinkan "workOrders") — JANGAN langsung error. Berlangganan ke
+           koleksi warisan sebagai sumber realtime; error hanya dilaporkan
+           bila kedua koleksi sama-sama tidak terbaca. */
+        if (sourceOk || unsubFallback) return;
+        unsubFallback = onSnapshot(
+          collection(db, LEGACY_COLLECTION),
+          (snap) => {
+            sourceOk = true;
+            legacyExtra = snap.docs.map((d) =>
+              normalizeDoc({ id: d.id, ...(d.data() as Record<string, unknown>) })
+            );
+            emit();
+          },
+          (errFallback) => reportError(errFallback ?? errMain)
+        );
+      }
     );
     void migrateLegacyOnce()
       .then(async () => {
@@ -415,11 +566,15 @@ export function subscribeWorkOrders(
           );
           emit();
         } catch {
-          /* abaikan */
+          /* koleksi warisan tidak terbaca — sumber utama sudah cukup;
+             bila tidak ada sumber sama sekali, error dilaporkan listener. */
         }
       })
       .catch(() => undefined);
-    return unsubMain;
+    return () => {
+      unsubMain();
+      unsubFallback?.();
+    };
   }
   const send = () => {
     onData([...mockRead()].map(normalizeDoc).sort(byCreatedDesc));
@@ -431,6 +586,7 @@ export function subscribeWorkOrders(
   };
 }
 
+/** Ambil semua work order sekali (tanpa langganan) — kedua koleksi digabung. */
 export async function getWorkOrders(): Promise<TrackedWorkOrder[]> {
   if (isFirebaseMode && db) {
     await migrateLegacyOnce().catch(() => undefined);
@@ -448,6 +604,8 @@ export async function getWorkOrders(): Promise<TrackedWorkOrder[]> {
   return [...mockRead()].map(normalizeDoc).sort(byCreatedDesc);
 }
 
+/** Lacak SATU work order berdasarkan nomor tracking — realtime.
+ *  onData(null) bila nomor tidak ditemukan. */
 export function trackWorkOrder(
   rawNumber: string,
   onData: (wo: TrackedWorkOrder | null) => void,
@@ -500,10 +658,14 @@ export function trackWorkOrder(
   };
 }
 
+/** Membuat work order baru. Mengembalikan NOMOR TRACKING-nya. */
 export async function createWorkOrder(input: NewWorkOrderInput): Promise<string> {
   const nowIso = new Date().toISOString();
   const initialStatus = String(input.status ?? 'New');
 
+  /* Field kompatibilitas untuk halaman dashboard LAMA (WorkOrderDetail,
+     DashboardHome, dll. yang membaca nama field versi lama).
+     Field baru tetap disimpan — dua-duanya tersimpan berdampingan. */
   const compatFields: Record<string, unknown> = {
     complainantName: input.reporterName ?? '',
     waNumber: input.reporterPhone ?? '',
@@ -529,46 +691,67 @@ export async function createWorkOrder(input: NewWorkOrderInput): Promise<string>
     createdAt: nowIso,
     updatedAt: nowIso,
   };
+  /* REVISI 4: halaman detail lama memanggil H.photos.length tanpa guard —
+     pastikan `photos` SELALU array (form mengirim string[] URL; bila
+     pemanggil lain tidak mengirimnya, isi array kosong). */
+  if (!Array.isArray(base.photos)) base.photos = [];
 
   if (isFirebaseMode && db) {
     let lastError: unknown = null;
     for (let attempt = 0; attempt < 5; attempt++) {
       const tn = generateTrackingNumber();
+      /* createdAt/updatedAt disimpan sebagai STRING ISO (bukan Timestamp)
+         supaya konsisten dengan WO lama — halaman lama yang membaca data
+         mentah (tanpa normalisasi) tetap bisa new Date(createdAt). */
+      const payload = {
+        ...base,
+        trackingNumber: tn,
+        woNumber: tn,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+        createdAtISO: nowIso,
+        updatedAtISO: nowIso,
+        photo: '',
+        photoAfter: '',
+      };
       try {
-        await setDoc(doc(db, WORKORDERS_COLLECTION, tn), {
-          ...base,
-          trackingNumber: tn,
-          woNumber: tn,
-          createdAt: nowIso,
-          updatedAt: nowIso,
-          createdAtISO: nowIso,
-          updatedAtISO: nowIso,
-          photo: '',
-          photoAfter: '',
-        });
+        await setDoc(doc(db, WORKORDERS_COLLECTION, tn), payload);
         return tn;
-      } catch (err: unknown) {
-        const anyErr = err as { code?: string; message?: string };
-        const code = String(anyErr?.code ?? '');
-        const msg = String(anyErr?.message ?? '');
-        if (code === 'already-exists' || /already exists/i.test(msg)) {
-          lastError = err;
+      } catch (errMain: unknown) {
+        if (isAlreadyExistsError(errMain)) {
+          lastError = errMain; // tabrakan nomor acak — coba nomor baru
           continue;
         }
-        throw err;
+        /* REVISI 6: koleksi utama bisa saja masih ditolak rules (rules lama
+           hanya mengizinkan "workOrders"). Pengiriman form TIDAK BOLEH gagal —
+           tulis ke koleksi warisan sebagai cadangan. Begitu rules diperbarui,
+           dokumen ini otomatis dipindahkan ke koleksi utama oleh migrasi. */
+        try {
+          await setDoc(doc(db, LEGACY_COLLECTION, tn), payload);
+          return tn;
+        } catch (errFallback: unknown) {
+          if (isAlreadyExistsError(errFallback)) {
+            lastError = errFallback; // tabrakan nomor acak — coba nomor baru
+            continue;
+          }
+          throw errFallback;
+        }
       }
     }
     throw lastError ?? new Error('Gagal membuat nomor tracking. Coba lagi.');
   }
 
+  /* mode mock */
   const list = mockRead();
   let tn = generateTrackingNumber();
   while (list.some((w) => String(w?.id ?? '') === tn)) tn = generateTrackingNumber();
-  list.unshift({ ...base, id: tn, trackingNumber: tn });
+  list.unshift({ ...base, id: tn, trackingNumber: tn, woNumber: tn });
   mockWrite(list);
   return tn;
 }
 
+/** Ubah status work order (+ catatan timeline & activity).
+ *  byName/note opsional — dikirim halaman dashboard lama. */
 export async function updateWorkOrderStatus(
   id: string,
   status: string,
@@ -617,6 +800,7 @@ export async function updateWorkOrderStatus(
   return normalizeDoc(w);
 }
 
+/** Pembaruan umum (patch bebas). Mengembalikan dokumen terbaru. */
 export async function updateWorkOrder(
   id: string,
   patch: Record<string, unknown>
@@ -641,6 +825,8 @@ export async function updateWorkOrder(
   return normalizeDoc(merged);
 }
 
+/** Unggah foto sebelum/sesudah — dipakai halaman detail lama
+ *  (updatePhoto(id, 'photo' | 'photoAfter', dataUrl)). */
 export async function updatePhoto(
   id: string,
   slot: string,
@@ -660,6 +846,7 @@ export async function updatePhoto(
   });
 }
 
+/** Menugaskan PIC/teknisi; bila status masih New otomatis jadi Assigned. */
 export async function assignTechnician(
   id: string,
   name: string,
@@ -683,6 +870,7 @@ export async function assignTechnician(
   });
 }
 
+/** Hapus work order. */
 export async function deleteWorkOrder(id: string): Promise<void> {
   if (isFirebaseMode && db) {
     const ref = await findDocRef(id);
@@ -692,13 +880,17 @@ export async function deleteWorkOrder(id: string): Promise<void> {
   mockWrite(mockRead().filter((w) => String(w?.id ?? '') !== id));
 }
 
+/* ---------- Ambil satu dokumen ---------- */
+
+/** Ambil satu work order berdasarkan ID dokumen (= nomor tracking untuk WO baru).
+ *  Mencari di koleksi utama, lalu koleksi warisan. */
 export async function getWorkOrderById(id: string): Promise<TrackedWorkOrder | null> {
   const key = formatTrackingInput(id).replace(/\//g, '');
   if (isFirebaseMode && db) {
     const ref = await findDocRef(key);
     if (!ref) return null;
     const snap = await getDoc(ref).catch(() => null);
-    if (!snap?.exists()) return null;
+    if (!snap || !snap.exists()) return null;
     return normalizeDoc({ id: snap.id, ...(snap.data() as Record<string, unknown>) });
   }
   const found = mockRead().find(
@@ -707,19 +899,25 @@ export async function getWorkOrderById(id: string): Promise<TrackedWorkOrder | n
   return found ? normalizeDoc(found) : null;
 }
 
+/** Versi async (Promise) dari trackWorkOrder — untuk kode lama. */
 export async function getWorkOrderByTrackingNumber(rawNumber: string): Promise<TrackedWorkOrder | null> {
   return getWorkOrderById(rawNumber);
 }
 
-/* ---------- Alias kompatibilitas ---------- */
+/* ---------- Alias kompatibilitas (untuk kode lama) ---------- */
 
 export const subscribeToWorkOrders = subscribeWorkOrders;
 export const fetchWorkOrders = getWorkOrders;
 export const assignWorkOrder = assignTechnician;
 
-/* ---------- Lapisan kompatibilitas gaya OBJEK ---------- */
+/* ---------- Lapisan kompatibilitas gaya OBJEK (REVISI 2) ----------
+   Menyediakan `import { workOrderService } from './workOrderService'`
+   seperti file service LAMA, supaya file yang tidak ikut di-update
+   (hooks, halaman dashboard lama, dsb.) tetap jalan tanpa diubah.
+   Semua fungsi di atas + alias nama metode umum tersedia di sini. */
 
 export const workOrderService = {
+  // fungsi utama (nama sama dengan export di atas)
   generateTrackingNumber,
   formatTrackingInput,
   normalizeStatusKey,
@@ -741,9 +939,10 @@ export const workOrderService = {
   assignTechnician,
   deleteWorkOrder,
 
-  subscribeToWorkOrders,
-  fetchWorkOrders,
-  assignWorkOrder,
+  // alias nama metode gaya lama / umum
+  subscribeToWorkOrders: subscribeWorkOrders,
+  fetchWorkOrders: getWorkOrders,
+  assignWorkOrder: assignTechnician,
   subscribe: subscribeWorkOrders,
   onWorkOrders: subscribeWorkOrders,
   getAll: getWorkOrders,
