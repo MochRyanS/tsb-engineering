@@ -41,9 +41,7 @@ export default function Divisions() {
                                     <div className={styles.chips}>
                                         {d.scope.map((s) => <span key={s} className={styles.chip}>{s}</span>)}
                                     </div>
-                                    <div className={styles.divMeta}>
-                                        <div><small>KEPALA DIVISI</small><strong>{d.head}</strong></div>
-                                    </div>
+                                    {/* Kepala divisi dihapus dari tampilan (Revisi 11) */}
                                     <Link to="/work-order" className={styles.divCta}>AJUKAN WORK ORDER<ArrowRight size={15} /></Link>
                                 </div>
                             </motion.article>
