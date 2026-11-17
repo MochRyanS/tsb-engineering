@@ -1,78 +1,81 @@
-=========================================================
-PAKET REVISI 8 — HAPUS FACILITIES + PERBAIKI TOMBOL HERO
-=========================================================
+=====================================================================
+PAKET REVISI 12 — PERBAIKAN HITUNGAN DASHBOARD + TABEL DIPISAH
+=====================================================================
 
-APA YANG DIPERBAIKI?
---------------------
-1. HALAMAN FACILITIES DIHAPUS.
-   - Menu "FACILITIES" di navbar hilang.
-   - Halaman /facilities tidak ada lagi. URL lama /facilities
-     (bookmark atau link lama) otomatis dialihkan ke halaman Home.
+ISI PERBAIKAN (3 hal)
+---------------------
+1. KARTU "IN PROGRESS" DI DASHBOARD TIDAK AKURAT + TOTAL SALAH
+   - Penyebab 1: dashboard hanya melanggan SATU koleksi data,
+     sehingga 2 dari 8 work order tidak terhitung (total sempat
+     tampil 6 padahal ada 8). Kini dashboard memakai langganan
+     gabungan yang sama dengan halaman Work Orders.
+   - Penyebab 2: kartu IN PROGRESS hanya menghitung status persis
+     "In Progress", padahal WO yang sudah diambil teknisi (status
+     "Assigned" — punya PIC) juga sedang dikerjakan. Kini kartu
+     IN PROGRESS menghitung: Assigned, In Progress, Waiting
+     Material, dan Quality Check — konsisten dengan tahap
+     "Diproses" di halaman Tracking. Dengan data Anda sekarang,
+     kartu ini akan menunjukkan 1 (WO Wahyudi yang ditangani
+     Tatang Supriatna).
 
-2. TOMBOL "CREATE WORK ORDER", "OUR DIVISIONS" (hero, halaman depan)
-   DAN TOMBOL MENGAMBANG "+ CREATE WORK ORDER" (pojok kanan bawah)
-   SEKARANG BERFUNGSI.
-   Akar masalahnya: tombol-tombol itu memakai link gaya lama
-   "#/work-order" (pakai tanda #). Website ini memakai router tanpa
-   tanda #, jadi klik tombol hanya menambah "#..." di belakang URL —
-   halaman tidak pernah pindah. Sekarang ada komponen HashRedirect
-   yang otomatis mengalihkan semua link gaya itu ke halaman yang
-   benar, jadi tombol hero + tombol mengambang langsung berfungsi
-   tanpa mengubah file halaman Anda.
+2. TABEL WORK ORDERS DIPISAH PER KELOMPOK STATUS
+   Halaman WORK ORDERS kini menampilkan 4 tabel terpisah:
+     - BARU    — WO baru masuk, belum ditugaskan (status New)
+     - PENDING — menunggu verifikasi admin
+     - PROGRESS — sedang dikerjakan (Assigned / In Progress /
+                  Waiting Material / Quality Check)
+     - SELESAI / DIBATALKAN — riwayat
+   Baris jumlah di atas tabel: "… ditemukan · n baru · n pending ·
+   n progress · n selesai". Pencarian & filter tetap berlaku untuk
+   semua tabel.
 
-FILE YANG WAJIB DIPASANG untuk update ini (3 file):
----------------------------------------------------
-  1. src/App.tsx                                (DIUBAH)
-  2. src/components/Navbar.tsx                  (DIUBAH)
-  3. src/components/HashRedirect.tsx            (FILE BARU)
+3. BONUS: tabel "WORK ORDER TERBARU" di halaman Dashboard selama
+   ini SELALU KOSONG (salah nama properti) — kini terisi.
 
-File lain di zip ini adalah perbaikan Revisi 4-7 (kumulatif) —
-boleh ikut ditempel (aman), tapi minimal 3 file di atas harus
-masuk supaya perubahan ini bekerja.
+CARA MEMINDAHKAN WO ANTAR TABEL (alur yang ada, tidak berubah):
+   BARU   : tekan ASSIGN + pilih teknisi  -> pindah ke PROGRESS
+   PROGRESS: START WORK / QUALITY CHECK   -> tetap di PROGRESS
+   PROGRESS: COMPLETE                     -> pindah ke SELESAI
+   CATATAN: kelompok PENDING hanya terisi bila ada WO berstatus
+   Waiting Verification / Verified.
 
-SETELAH FILE DITEMPEL (PILIHAN, OPSIONAL):
-------------------------------------------
-- Folder "src/pages/Facilities" di proyek Anda boleh DIHAPUS
-  (klik kanan folder > Delete). TAPI hati-hati urutannya: TEMPEL
-  DULU file App.tsx yang baru, BARU hapus foldernya. Kalau tidak
-  yakin, biarkan saja foldernya — tidak berefuk apa pun karena
-  sudah tidak dipakai.
+CARA PASANG — 6 FILE (semua REPLACE, tidak ada file baru)
+---------------------
+Cara termudah:
+1. Ekstrak "update-revisi-12.zip".
+2. Buka foldernya, copy folder "src" ke dalam
+   C:\program\website-WO\  -> pilih REPLACE bila ditanya.
+   (Folder src di zip hanya berisi 6 file ini — file lain di
+   proyek Anda tidak tersentuh.)
 
-CATATAN SOAL FOOTER:
---------------------
-Di bagian paling bawah website ada link kecil "Facilities" yang
-berasal dari file Footer di proyek Anda (file itu tidak termasuk
-paket ini). Setelah update ini, link tersebut hanya membawa ke
-halaman Home. Kalau ingin menghapus tulisannya juga: buka file
-Footer di proyek Anda (src/components/Footer), hapus baris yang
-berisi label `Facilities`.
+Daftar 6 file (kalau ingin copy satu per satu — REPLACE semua):
+   src\services\workOrderService.ts
+   src\hooks\useWorkOrders.tsx
+   src\pages\Dashboard\DashboardHome\DashboardHome.tsx
+   src\pages\Dashboard\WorkOrders\WorkOrders.tsx
+   src\components\charts\StatusChart.tsx
+   src\components\dashboard\WorkOrderTable\WorkOrderTable.tsx
 
-CARA PASANG
------------
-1. Download "update-revisi-8.zip" lalu ekstrak.
-2. Copy folder "src" ke folder proyek website Anda
-   (C:\program\website-WO) -> pilih REPLACE / TIMPA file.
-   (File HashRedirect.tsx otomatis masuk ke src\components.)
+LALU:
 3. Terminal VSCode:
 
-     git add .
-     git status        <- cek file yang ikut ter-upload
-     git commit -m "hapus facilities + perbaiki tombol hero"
+     git add -A
+     git status
+
+   Pastikan muncul "modified:" untuk 6 file di atas.
+4. Lanjut:
+
+     git commit -m "revisi 12: hitungan dashboard akurat + tabel per status"
      git push
 
-   (Tulisan dalam tanda kutip bebas — catatan saja.)
-4. Buka vercel.com > project Anda > Deployments > tunggu HIJAU
-   "Ready". Kalau MERAH: klik deployment, screenshot errornya,
-   kirim ke saya.
-5. Buka website, tekan Ctrl + Shift + R (hard refresh).
+5. vercel.com > Deployments > tunggu HIJAU "Ready".
+6. Buka dashboard > Ctrl+Shift+R (hard refresh).
 
-CEK HASILNYA
-------------
-- Navbar: menu FACILITIES sudah tidak ada.
-- Ketik manual alamat .../facilities -> otomatis kembali ke Home.
-- Halaman depan: klik "CREATE WORK ORDER" -> masuk halaman form
-  Work Order. Klik "OUR DIVISIONS" -> masuk halaman Divisions.
-- Tombol mengambang "+ CREATE WORK ORDER" di pojok kanan bawah ->
-  masuk halaman form Work Order.
-- Menu Technicians: 22 nama teknisi asli (bawaan Revisi 7), tanpa
-  kartu Performance.
+HASIL YANG DILIHAT (dengan data Anda saat ini)
+----------------------------------------------
+- Dashboard: TOTAL WORK ORDERS = 8 (bukan 6), IN PROGRESS = 1.
+- Tabel "WORK ORDER TERBARU" di dashboard terisi 5 baris.
+- Halaman WORK ORDERS: BARU (3) · PENDING (0) · PROGRESS (1) ·
+  SELESAI (4).
+- Donut STATUS di dashboard menghitung semua varian penulisan
+  status lama (mis. "On Progress" dihitung sebagai In Progress).

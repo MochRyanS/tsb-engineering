@@ -3,9 +3,8 @@ import { Link } from 'react-router-dom';
 import { Plus, RefreshCw, Search, AlertTriangle, Loader2 } from 'lucide-react';
 import {
   subscribeWorkOrders,
-  isHistoryStatus,
   normalizeStatusKey,
-  statusMetaOf,
+  woStatusGroup,
   type TrackedWorkOrder,
 } from '../../../services/workOrderService';
 import WorkOrderTable from '../../../components/dashboard/WorkOrderTable/WorkOrderTable';
@@ -92,8 +91,22 @@ export default function WorkOrders() {
     });
   }, [workOrders, search, divisionFilter, statusFilter, priorityFilter]);
 
-  const active = useMemo(() => filtered.filter((w) => !isHistoryStatus(w.status)), [filtered]);
-  const history = useMemo(() => filtered.filter((w) => isHistoryStatus(w.status)), [filtered]);
+  /* REVISI 12: tabel dipisah menjadi 4 kelompok status:
+     BARU (New/Submitted — baru masuk, belum ditugaskan) ·
+     PENDING (Waiting Verification/Verified — menunggu verifikasi) ·
+     PROGRESS (Assigned/In Progress/Waiting Material/Quality Check —
+     sedang ditangani, sama dengan kartu IN PROGRESS) ·
+     SELESAI (Completed/Cancelled — riwayat). */
+  const groups = useMemo(() => {
+    const acc: Record<'baru' | 'pending' | 'progress' | 'selesai', TrackedWorkOrder[]> = {
+      baru: [],
+      pending: [],
+      progress: [],
+      selesai: [],
+    };
+    for (const w of filtered) acc[woStatusGroup(w.status)].push(w);
+    return acc;
+  }, [filtered]);
 
   function resetFilters() {
     setSearch('');
@@ -185,28 +198,38 @@ export default function WorkOrders() {
       ) : (
         <>
           <p className={styles.count}>
-            <b>{filtered.length}</b> work order ditemukan ·{' '}
-            <b>{active.length}</b> aktif · <b>{history.length}</b> riwayat
-            {loading === false && workOrders.length > 0 && (
-              <>
-                {' '}
-                · status terakhir:{' '}
-                {statusMetaOf(workOrders[0]?.status).label}
-              </>
-            )}
+            <b>{filtered.length}</b> work order ditemukan · <b>{groups.baru.length}</b> baru ·{' '}
+            <b>{groups.pending.length}</b> pending · <b>{groups.progress.length}</b> progress ·{' '}
+            <b>{groups.selesai.length}</b> selesai
           </p>
 
           <WorkOrderTable
-            workOrders={active}
-            title={`WORK ORDER AKTIF (${active.length})`}
-            emptyLabel="Tidak ada work order aktif untuk filter ini."
+            workOrders={groups.baru}
+            title={`BARU — BARU MASUK, BELUM DITUGASKAN (${groups.baru.length})`}
+            emptyLabel="Tidak ada work order baru untuk filter ini."
           />
 
           <div className={styles.gap} />
 
           <WorkOrderTable
-            workOrders={history}
-            title={`RIWAYAT — SELESAI / DIBATALKAN (${history.length})`}
+            workOrders={groups.pending}
+            title={`PENDING — MENUNGGU VERIFIKASI (${groups.pending.length})`}
+            emptyLabel="Tidak ada work order pending untuk filter ini."
+          />
+
+          <div className={styles.gap} />
+
+          <WorkOrderTable
+            workOrders={groups.progress}
+            title={`PROGRESS — SEDANG DIKERJAKAN (${groups.progress.length})`}
+            emptyLabel="Tidak ada work order yang sedang dikerjakan untuk filter ini."
+          />
+
+          <div className={styles.gap} />
+
+          <WorkOrderTable
+            workOrders={groups.selesai}
+            title={`SELESAI / DIBATALKAN — RIWAYAT (${groups.selesai.length})`}
             emptyLabel="Belum ada work order selesai atau dibatalkan."
           />
         </>

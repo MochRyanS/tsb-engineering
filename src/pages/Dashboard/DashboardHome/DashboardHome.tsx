@@ -9,7 +9,8 @@ import MonthlyChart, { type MonthlyPoint } from "../../../components/charts/Mont
 import DivisionChart, { type DivisionPoint } from "../../../components/charts/DivisionChart";
 import StatusChart, { type StatusPoint } from "../../../components/charts/StatusChart";
 import PriorityChart, { type PriorityPoint } from "../../../components/charts/PriorityChart";
-import { DIVISIONS, PRIORITIES, STATUSES } from "../../../utils/constants";
+import { DIVISIONS, PRIORITIES } from "../../../utils/constants";
+import { woStatusGroup, isHistoryStatus, statusMetaOf, priorityMetaOf } from "../../../services/workOrderService";
 import styles from "./DashboardHome.module.css";
 
 interface StatDef { key: string; label: string; icon: LucideIcon; tone: "dark" | "info" | "warn" | "ok" | "danger"; }
@@ -25,12 +26,17 @@ const STATS: StatDef[] = [
 export default function DashboardHome() {
   const { workOrders, loading } = useWorkOrders();
 
+  /* REVISI 12: kartu dihitung per KELOMPOK status (lihat woStatusGroup di
+     workOrderService) — tahan terhadap varian penulisan lama, dan kartu
+     IN PROGRESS kini mencakup semua WO yang sedang ditangani (Assigned /
+     In Progress / Waiting Material / Quality Check), selaras dengan tahap
+     "Diproses" di halaman Tracking. */
   const counts = useMemo(() => ({
     total: workOrders.length,
-    new: workOrders.filter((w) => w.status === "New").length,
-    progress: workOrders.filter((w) => w.status === "In Progress" || w.status === "Waiting Material").length,
-    completed: workOrders.filter((w) => w.status === "Completed").length,
-    urgent: workOrders.filter((w) => w.priority === "High" && w.status !== "Completed" && w.status !== "Cancelled").length,
+    new: workOrders.filter((w) => woStatusGroup(w.status) === "baru").length,
+    progress: workOrders.filter((w) => woStatusGroup(w.status) === "progress").length,
+    completed: workOrders.filter((w) => statusMetaOf(w.status).label === "Completed").length,
+    urgent: workOrders.filter((w) => priorityMetaOf(w.priority).label === "HIGH" && !isHistoryStatus(w.status)).length,
   }), [workOrders]);
 
   const trend = useMemo(() => {
@@ -56,7 +62,7 @@ export default function DashboardHome() {
     for (const wo of workOrders) {
       const m = new Date(wo.createdAt).toLocaleDateString("id-ID", { month: "short", year: "2-digit" });
       const i = idx.get(m);
-      if (i !== undefined) { months[i].total++; if (wo.status === "Completed") months[i].completed++; }
+      if (i !== undefined) { months[i].total++; if (statusMetaOf(wo.status).label === "Completed") months[i].completed++; }
     }
     return months;
   }, [workOrders]);
@@ -65,10 +71,19 @@ export default function DashboardHome() {
     () => DIVISIONS.map((d) => ({ division: d, total: workOrders.filter((w) => w.division === d).length })),
     [workOrders]
   );
-  const byStatus: StatusPoint[] = useMemo(
-    () => STATUSES.map((s) => ({ name: s, value: workOrders.filter((w) => w.status === s).length })).filter((p) => p.value > 0),
-    [workOrders]
-  );
+  /* REVISI 12: donut STATUS dikelompokkan per label ternormalisasi
+     ("On Progress" → "In Progress", "Done"/"Selesai" → "Completed", dst.)
+     supaya varian penulisan lama tetap terhitung. */
+  const byStatus: StatusPoint[] = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const w of workOrders) {
+      const label = statusMetaOf(w.status).label;
+      map.set(label, (map.get(label) ?? 0) + 1);
+    }
+    return Array.from(map.entries())
+      .map(([name, value]) => ({ name, value }))
+      .filter((p) => p.value > 0);
+  }, [workOrders]);
   const byPriority: PriorityPoint[] = useMemo(
     () => PRIORITIES.map((p) => ({ priority: p, total: workOrders.filter((w) => w.priority === p).length })),
     [workOrders]

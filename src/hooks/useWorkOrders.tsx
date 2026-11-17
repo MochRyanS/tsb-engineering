@@ -1,9 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import type { CreateWorkOrderInput, WorkOrder, WorkOrderStatus } from "../types";
-import { workOrderService } from "../services/workOrderService";
-import { db, firebaseReady } from "../services/firebaseClient";
+import { subscribeWorkOrders, workOrderService } from "../services/workOrderService";
 import { useAuth } from "./useAuth";
 
 interface WorkOrdersContextValue {
@@ -23,28 +21,26 @@ export function WorkOrderProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         let alive = true;
-        let unsub: (() => void) | undefined;
 
-        workOrderService.getAll().then((list) => {
-            if (!alive) return;
-            setWorkOrders(list);
-            setLoading(false);
-
-            // Mode Firebase: berlangganan realtime — WO baru dari device/tab lain
-            // (termasuk customer yang mengisi form di HP) langsung muncul tanpa refresh.
-            if (firebaseReady && db) {
-                unsub = onSnapshot(
-                    query(collection(db, "workorders"), orderBy("createdAt", "desc")),
-                    (snap: { docs: any[]; }) => {
-                        if (!alive) return;
-                        setWorkOrders(snap.docs.map((d: { data: () => Omit<WorkOrder, "id">; id: any; }) => ({ ...(d.data() as Omit<WorkOrder, "id">), id: d.id })));
-                    },
-                    () => { /* gangguan jaringan — data awal tetap tampil */ }
-                );
+        /* REVISI 12: berlangganan lewat service — menggabungkan koleksi utama
+           'workorders' + koleksi warisan 'workOrders' secara realtime, sehingga
+           jumlah WO di dashboard selalu sama dengan halaman Work Orders.
+           (Sebelumnya hook ini melanggan sendiri HANYA ke koleksi utama,
+           sehingga WO yang berada di koleksi warisan tidak terhitung.) */
+        const unsub = subscribeWorkOrders(
+            (list) => {
+                if (!alive) return;
+                setWorkOrders(list);
+                setLoading(false);
+            },
+            () => {
+                /* kedua koleksi tidak terbaca (mis. aturan keamanan) —
+                   akhiri loading dengan daftar kosong */
+                if (alive) setLoading(false);
             }
-        });
+        );
 
-        return () => { alive = false; if (unsub) unsub(); };
+        return () => { alive = false; unsub(); };
     }, []);
 
     const replace = useCallback((wo: WorkOrder) => {

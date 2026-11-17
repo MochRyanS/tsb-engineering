@@ -16,6 +16,7 @@ type TableProps = {
   rows?: TrackedWorkOrder[];
   items?: TrackedWorkOrder[];
   data?: TrackedWorkOrder[];
+  orders?: TrackedWorkOrder[]; // REVISI 12: dipakai DashboardHome ("WORK ORDER TERBARU")
   title?: string;
   emptyLabel?: string;
   [key: string]: unknown;
@@ -36,7 +37,7 @@ async function copyText(text: string) {
 
 export default function WorkOrderTable(props: TableProps) {
   const list: TrackedWorkOrder[] =
-    props.workOrders ?? props.rows ?? props.items ?? props.data ?? [];
+    props.workOrders ?? props.rows ?? props.items ?? props.data ?? props.orders ?? [];
   const emptyLabel = typeof props.emptyLabel === 'string' ? props.emptyLabel : 'Belum ada work order.';
   const [copiedId, setCopiedId] = useState<string | null>(null);
 

@@ -156,6 +156,30 @@ export function statusStep(status: unknown): number {
   return 1;
 }
 
+/* ---------- REVISI 12: kelompok status untuk dashboard & tabel ---------- */
+
+export type WoStatusGroup = 'baru' | 'pending' | 'progress' | 'selesai';
+
+/** Kelompok tampilan sebuah status:
+ *  - 'baru'     : New / Submitted — baru masuk, belum ditugaskan.
+ *  - 'pending'  : Waiting Verification / Verified — menunggu verifikasi.
+ *  - 'progress' : Assigned / In Progress / Waiting Material / Quality Check —
+ *                 sedang ditangani (selaras dengan tahap "Diproses" di
+ *                 halaman Tracking). Dipakai kartu IN PROGRESS di dashboard.
+ *  - 'selesai'  : Completed / Cancelled — riwayat. */
+export function woStatusGroup(status: unknown): WoStatusGroup {
+  const key = normalizeStatusKey(status);
+  if (isHistoryStatus(key)) return 'selesai';
+  if (['assigned', 'in progress', 'on progress', 'waiting material', 'quality check'].includes(key)) return 'progress';
+  if (['waiting for verification', 'verified'].includes(key)) return 'pending';
+  return 'baru';
+}
+
+/** true = sedang ditangani (kelompok 'progress'). */
+export function isProgressStatus(status: unknown): boolean {
+  return woStatusGroup(status) === 'progress';
+}
+
 export const PRIORITY_META: Record<string, { label: string; tone: string }> = {
   high: { label: 'HIGH', tone: 'red' },
   urgent: { label: 'HIGH', tone: 'red' },
@@ -925,6 +949,8 @@ export const workOrderService = {
   priorityMetaOf,
   isHistoryStatus,
   statusStep,
+  woStatusGroup,
+  isProgressStatus,
   formatDate,
   formatDateTime,
   subscribeWorkOrders,
